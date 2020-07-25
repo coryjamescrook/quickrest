@@ -1,0 +1,25 @@
+{
+  "name": "quickrest",
+  "version": "1.0.0",
+  "description": "A fast rest server",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "dev": "nodemon --watch 'src/**/*.ts' --ignore 'test/**/*.ts' --exec 'ts-node' src/server.ts"
+  },
+  "keywords": [
+    "rest",
+    "api",
+    "node"
+  ],
+  "author": "Cory James Crook",
+  "license": "ISC",
+  "devDependencies": {
+    "@types/node": "^14.0.23",
+    "nodemon": "^2.0.4",
+    "ts-node": "^8.10.2",
+    "typescript": "^3.9.6"
+  },
+  "dependencies": {
+    "node": "^14.5.0"
+  }
+}
