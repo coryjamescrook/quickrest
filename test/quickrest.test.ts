@@ -20,4 +20,15 @@ describe('quickrest', () => {
     expect(server.port()).toEqual(9997)
     expect(server.loggingEnabled).toEqual(true)
   })
+
+  describe('.instance', () => {
+    it('returns a single instance of a QuickRest class', () => {
+      const server = QuickRest.instance()
+      const serverTwo = QuickRest.instance()
+
+      expect(server).toBeInstanceOf(QuickRest)
+      expect(serverTwo).toBeInstanceOf(QuickRest)
+      expect(serverTwo).toStrictEqual(server)
+    })
+  })
 })
