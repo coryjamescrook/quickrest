@@ -4,7 +4,8 @@
   "description": "A fast rest server",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
-    "dev": "nodemon --watch 'src/**/*.ts' --ignore 'test/**/*.ts' --exec 'ts-node' src/server.ts"
+    "dev": "nodemon --watch 'src/**/*.ts' --ignore 'test/**/*.ts' --exec 'ts-node' src/server.ts",
+    "start": "./node_modules/typescript/bin/tsc --project ./tsconfig.json && node build/server.js"
   },
   "keywords": [
     "rest",
