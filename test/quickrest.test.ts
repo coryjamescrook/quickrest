@@ -55,6 +55,24 @@ describe('quickrest', () => {
         expect(server.port()).toEqual(portArg)
       })
     })
+  })
 
+  describe('#setDefaultHeaders', () => {
+    it('sets the server\'s default headers correctly', () => {
+      const server = newServer()
+      const contentTypeHeader = { name: 'Content-Type', value: 'application/json' }
+
+      // sanity check - should be an empty array
+      expect(getPrivate(server, '_defaultHeaders')).toEqual([])
+
+      const setHeadersReturnValue = server.setDefaultHeaders(contentTypeHeader)
+
+      // returns the QuickRest instance
+      expect(setHeadersReturnValue).toBeInstanceOf(QuickRest)
+
+      // sets the default headers
+      expect(getPrivate(server, '_defaultHeaders'))
+        .toEqual([contentTypeHeader])
+    })
   })
 })
