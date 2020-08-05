@@ -1,4 +1,4 @@
-import http, { IncomingMessage, ServerResponse, IncomingHttpHeaders, Server, OutgoingMessage } from 'http'
+import http, { IncomingMessage, ServerResponse, IncomingHttpHeaders, Server } from 'http'
 import { HTTPMethods } from './common'
 
 export class Request extends IncomingMessage {
