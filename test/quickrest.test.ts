@@ -1,4 +1,5 @@
 import { Request, Response, QuickRest, QuickRestConfigOpts } from '../src/quickrest'
+import { HTTPMethods } from '../src/common'
 import { getPrivate } from './helpers'
 
 // define some helpers
@@ -73,6 +74,49 @@ describe('quickrest', () => {
       // sets the default headers
       expect(getPrivate(server, '_defaultHeaders'))
         .toEqual([contentTypeHeader])
+    })
+  })
+
+  describe('#get', () => {
+    const handler = (_req: Request, _res: Response) => {}
+    const method = HTTPMethods.GET
+    const path = '/v1/something_testy'
+
+    describe('without middleware', () => {
+      const server = newServer()
+
+      it('adds the route for the GET http method, with the correct handler, without middleware', () => {
+        // sanity
+        expect(getPrivate(server, '_routes')).toEqual([])
+
+        server.get(path, handler)
+
+        expect(getPrivate(server, '_routes')).toEqual([
+          {
+            method,
+            path,
+            handler,
+            middleware: []
+          }
+        ])
+      })
+    })
+
+    describe('with middleware', () => {
+      const server = newServer()
+      const middleware = [
+        (_req: Request, _res: Response) => {},
+        (_req: Request, _res: Response) => {}
+      ]
+
+      it('adds the route for the GET http method, with the correct handler, with middleware', () => {
+        // sanity
+        expect(getPrivate(server, '_routes')).toEqual([])
+
+        server.get(path, handler, ...middleware)
+
+        expect(getPrivate(server, '_routes')).toEqual([{ method, path, handler, middleware }])
+      })
     })
   })
 })
