@@ -88,7 +88,7 @@ interface ResponseHeader {
   value: string | number | string[]
 }
 
-class QuickRest {
+export class QuickRest {
   private static _instance: QuickRest
   private readonly _server: Server
   private _port: number
