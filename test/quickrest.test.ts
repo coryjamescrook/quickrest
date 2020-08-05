@@ -1,4 +1,5 @@
 import { Request, Response, QuickRest, QuickRestConfigOpts } from '../src/quickrest'
+import { getPrivate } from './helpers'
 
 // define some helpers
 const newServer = (opts?: QuickRestConfigOpts): QuickRest => {
@@ -15,10 +16,12 @@ describe('quickrest', () => {
   })
 
   it('successfully creates an instance of a quickrest server with the correct configuration', () => {
-    const server = newServer({ port: 9997, enableLogging: true })
+    const port = 9997
+    const enableLogging = true
+    const server = newServer({ port, enableLogging })
 
-    expect(server.port()).toEqual(9997)
-    expect(server.loggingEnabled).toEqual(true)
+    expect(getPrivate(server, '_port')).toEqual(port)
+    expect(server.loggingEnabled).toEqual(enableLogging)
   })
 
   describe('.instance', () => {
@@ -30,5 +33,28 @@ describe('quickrest', () => {
       expect(serverTwo).toBeInstanceOf(QuickRest)
       expect(serverTwo).toStrictEqual(server)
     })
+  })
+
+  describe('#port', () => {
+    describe('when no argument is provided', () => {
+      it('returns the server port correctly', () => {
+        const port = 9093
+        const server = newServer({ port })
+
+        expect(server.port()).toEqual(port)
+      })
+    })
+
+    describe('when an argument is provided', () => {
+      const portArg = 9093
+
+      it('sets the server port correctly', () => {
+        const server = newServer()
+
+        expect(server.port(portArg)).toEqual(portArg)
+        expect(server.port()).toEqual(portArg)
+      })
+    })
+
   })
 })
