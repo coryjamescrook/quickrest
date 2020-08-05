@@ -1,3 +1,5 @@
+import { Server } from 'http'
+
 import { Request, Response, QuickRest, QuickRestConfigOpts } from '../src/quickrest'
 import { HTTPMethods } from '../src/common'
 import { getPrivate } from './helpers'
@@ -8,6 +10,12 @@ const newServer = (opts?: QuickRestConfigOpts): QuickRest => {
 }
 
 describe('quickrest', () => {
+  it('successfully sets a server value as an http server instance', () => {
+    const server = newServer()
+
+    expect(getPrivate(server, '_server')).toBeInstanceOf(Server)
+  })
+
   it('successfully creates an instance of a quickrest server, with default values for configuration', () => {
     const server = newServer()
 
@@ -77,46 +85,78 @@ describe('quickrest', () => {
     })
   })
 
-  describe('#get', () => {
-    const handler = (_req: Request, _res: Response) => {}
-    const method = HTTPMethods.GET
-    const path = '/v1/something_testy'
+  describe('http method handler methods', () => {
+    Object.values(HTTPMethods).forEach(method => {
+      describe(`#${method.toLowerCase()}`, () => {
+        const handler = (_req: Request, _res: Response) => { }
+        const path = '/v1/something_testy'
 
-    describe('without middleware', () => {
-      const server = newServer()
+        describe('without middleware', () => {
+          const server = newServer()
 
-      it('adds the route for the GET http method, with the correct handler, without middleware', () => {
-        // sanity
-        expect(getPrivate(server, '_routes')).toEqual([])
+          it('adds the route for the GET http method, with the correct handler, without middleware', () => {
+            (server as any)[method.toLowerCase()](path, handler)
 
-        server.get(path, handler)
+            expect(getPrivate(server, '_routes')).toEqual([
+              {
+                method,
+                path,
+                handler,
+                middleware: []
+              }
+            ])
+          })
+        })
 
-        expect(getPrivate(server, '_routes')).toEqual([
-          {
-            method,
-            path,
-            handler,
-            middleware: []
-          }
-        ])
+        describe('with middleware', () => {
+          const server = newServer()
+          const middleware = [
+            (_req: Request, _res: Response) => { },
+            (_req: Request, _res: Response) => { }
+          ]
+
+          it('adds the route for the GET http method, with the correct handler, with middleware', () => {
+            (server as any)[method.toLowerCase()](path, handler, ...middleware)
+
+            expect(getPrivate(server, '_routes')).toEqual([{ method, path, handler, middleware }])
+          })
+        })
       })
     })
+  })
 
-    describe('with middleware', () => {
-      const server = newServer()
-      const middleware = [
-        (_req: Request, _res: Response) => {},
-        (_req: Request, _res: Response) => {}
-      ]
+  describe('#use', () => {
+    const method = '*'
+    const path = '/v1/something_testy'
+    const server = newServer()
+    const middleware = [
+      (_req: Request, _res: Response) => {},
+      (_req: Request, _res: Response) => {}
+    ]
 
-      it('adds the route for the GET http method, with the correct handler, with middleware', () => {
-        // sanity
-        expect(getPrivate(server, '_routes')).toEqual([])
+    it('mounts the middleware with the correct method and path', () => {
+      // sanity
+      expect(getPrivate(server, '_routes')).toEqual([])
 
-        server.get(path, handler, ...middleware)
+      server.use(path, ...middleware)
 
-        expect(getPrivate(server, '_routes')).toEqual([{ method, path, handler, middleware }])
-      })
+      expect(getPrivate(server, '_routes'))
+        .toEqual([{ method, path, handler: undefined, middleware }])
+    })
+  })
+
+  describe('#serve', () => {
+    it('listens to the provided port, and calls the callback fn', async () => {
+      const port = 8364
+      const server = newServer({ port })
+      const httpServer = getPrivate(server, '_server')
+      const httpServerSpy = jest.spyOn(httpServer, 'listen')
+      Object.defineProperty(server, '_server', httpServerSpy)
+
+      const mockCallback = jest.fn()
+
+      await server.serve(mockCallback)
+      expect(httpServerSpy).toHaveBeenCalledWith(port, mockCallback(httpServer))
     })
   })
 })
