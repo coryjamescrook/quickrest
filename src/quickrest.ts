@@ -1,95 +1,17 @@
-import http, { IncomingMessage, ServerResponse, IncomingHttpHeaders, Server } from 'http'
+import http, { IncomingMessage, ServerResponse, Server } from 'http'
+
+import { Request } from './request'
+import { Response, ResponseHeader } from './response'
+import Route, { RouteHandler, RouteMiddleware } from './route'
+
 import { HTTPMethods } from './common'
-
-export class Request extends IncomingMessage {
-  public readonly method: HTTPMethods
-  public readonly headers: IncomingHttpHeaders
-  public readonly url: string
-
-  constructor(incoming: IncomingMessage) {
-    super(incoming.socket)
-
-    this.method = incoming.method as HTTPMethods
-    this.headers = incoming.headers
-    this.url = incoming.url!
-  }
-}
-
-export class Response {
-  private serverResponse: ServerResponse
-
-  constructor(res: ServerResponse) {
-    this.serverResponse = res
-    this.statusCode = 200
-  }
-
-  private get statusCode() {
-    return this.serverResponse.statusCode
-  }
-
-  private set statusCode(code: number) {
-    this.serverResponse.statusCode = code
-  }
-
-  private write(body: any) {
-    this.serverResponse.write(body)
-  }
-
-  private end(body?: any) {
-    this.serverResponse.end(body)
-  }
-
-  public setHeader(name: string, value: string | number | string[]) {
-    this.serverResponse.setHeader(name, value)
-  }
-
-  public status = (code: number): Response => {
-    this.statusCode = code
-
-    return this
-  }
-
-  public json = (body: any): void => {
-    this.write(JSON.stringify(body))
-    this.end()
-  }
-
-  public send = (body: any): void => {
-    if (typeof body === 'string') {
-      this.write(body)
-      this.end()
-    } else {
-      this.json(body)
-    }
-  }
-
-  // helpers
-  public notFound = (): void => {
-    this.status(404).end()
-  }
-}
 
 export interface QuickRestConfigOpts {
   port?: number
   enableLogging?: boolean
 }
 
-export type RouteHandler = (req: Request, res: Response) => void
-export type RouteMiddleware = (req: Request, res: Response) => void
-export interface Route {
-  method: HTTPMethods | '*'
-  path: string
-  handler?: RouteHandler
-  middleware: RouteMiddleware[]
-}
-
-interface ResponseHeader {
-  name: string
-  value: string | number | string[]
-}
-
 export class QuickRest {
-  private static _instance: QuickRest
   private readonly _server: Server
   private _port: number
   private _routes: Route[]
@@ -153,12 +75,7 @@ export class QuickRest {
 
   // mount endpoints
   private mount(method: HTTPMethods | '*', path: string, handler?: RouteHandler, ...middleware: RouteMiddleware[]): void {
-    this._routes.push({
-      method,
-      path,
-      handler,
-      middleware
-    })
+    this._routes.push(new Route({ method, path, handler, middleware }))
   }
 
   private _use(path: string, ...middleware: RouteMiddleware[]): void {
@@ -166,14 +83,6 @@ export class QuickRest {
   }
 
   // public methods
-  public static instance(configOpts?: QuickRestConfigOpts): QuickRest {
-    if (!this._instance) {
-      this._instance = new QuickRest(configOpts)
-    }
-
-    return this._instance
-  }
-
   // set, and/or get the server port number
   public port(portNumber?: number): number {
     if (portNumber !== undefined) {
@@ -214,9 +123,11 @@ export class QuickRest {
   }
 
   // used to start the server
-  public serve(callbackFn: (server: Server) => any): void {
-    this._server.listen(this._port, callbackFn(this._server))
+  public serve(callbackFn?: (server: Server) => any): void {
+    if (callbackFn) {
+      this._server.listen(this._port, callbackFn(this._server))
+    } else {
+      this._server.listen(this._port)
+    }
   }
 }
-
-export default QuickRest.instance
