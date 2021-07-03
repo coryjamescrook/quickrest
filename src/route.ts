@@ -1,29 +1,21 @@
 import { Request } from './request'
 import { Response } from './response'
+import { Middleware, MiddlewareHandler } from './middleware'
 import { HTTPMethods } from './common'
 
-export type RouteHandler = (req: Request, res: Response) => void
+export type RouteHandler = (req: Request, res: Response) => void | Promise<void>
 
-export type RouteMiddleware = (req: Request, res: Response) => void
-
-interface RouteOpts {
-  method: HTTPMethods | '*'
-  path: string
-  handler?: RouteHandler
-  middleware?: RouteMiddleware[]
-}
-
-class Route {
-  private _method: HTTPMethods | '*'
+export class Route {
+  private _method: HTTPMethods
   private _path: string
-  private _middleware: RouteMiddleware[]
-  private _handler?: RouteHandler
-  
-  constructor(opts: RouteOpts) {
-    this._method = opts.method
-    this._path = opts.path
-    this._middleware = opts.middleware || []
-    this._handler = opts.handler
+  private _middleware: Middleware[]
+  private _handler: RouteHandler
+
+  constructor(method: HTTPMethods, path: string, handler: RouteHandler, middlewareHandlers?: MiddlewareHandler[]) {
+    this._method = method
+    this._path = path
+    this._handler = handler
+    this._middleware = middlewareHandlers?.map(handler => new Middleware(method, path, handler)) || []
   }
 
   public get method() {
@@ -42,5 +34,3 @@ class Route {
     return this._handler
   }
 }
-
-export default Route

@@ -2,7 +2,8 @@ import http, { IncomingMessage, ServerResponse, Server } from 'http'
 
 import { Request } from './request'
 import { Response, ResponseHeader } from './response'
-import Route, { RouteHandler, RouteMiddleware } from './route'
+import { Route, RouteHandler } from './route'
+import { Middleware, MiddlewareHandler } from './middleware'
 
 import { HTTPMethods } from './common'
 
@@ -15,6 +16,7 @@ export class QuickRest {
   private readonly _server: Server
   private _port: number
   private _routes: Route[]
+  private _middleware: Middleware[]
   private _defaultHeaders: ResponseHeader[]
   public readonly loggingEnabled: boolean
 
@@ -23,6 +25,7 @@ export class QuickRest {
     this._port = Number(configOpts?.port) || 3000
     this._server = http.createServer()
     this._routes = []
+    this._middleware = []
     this._defaultHeaders = []
 
     this.initServerListeners()
@@ -45,8 +48,14 @@ export class QuickRest {
 
   private findRoutesForRequest(req: Request) {
     return this._routes.filter(route => {
-      return (route.path === req.url || route.path === '*')
-        && (route.method === req.method || route.method === '*')
+      return (route.path === req.url || route.path === '*') && route.method === req.method
+    })
+  }
+
+  private findMiddlewareForRequest(req: Request) {
+    return this._middleware.filter(middleware => {
+      return (middleware.path === req.url || middleware.path === '*')
+        && (middleware.method === req.method || middleware.method === '*')
     })
   }
 
@@ -54,19 +63,16 @@ export class QuickRest {
     this._server.on('request', (incoming: IncomingMessage, outgoing: ServerResponse) => {
       const [req, res] = this.genReqAndRes(incoming, outgoing)
       const routes = this.findRoutesForRequest(req)
+      const middlewares = this.findMiddlewareForRequest(req)
+
+      if (middlewares.length) {
+        middlewares.forEach(middleware => {
+          middleware.handler(req, res)
+        })
+      }
 
       if (routes.length) {
-        const handlerRoute = routes.find(r => r.handler)
-
-        routes.forEach(route => {
-          route.middleware.forEach(m => m(req, res))
-        })
-
-        if (handlerRoute && handlerRoute.handler) {
-          handlerRoute.handler(req, res)
-        } else {
-          res.notFound()
-        }
+        routes.forEach(route => route.handler(req, res))
       } else {
         res.notFound()
       }
@@ -74,12 +80,13 @@ export class QuickRest {
   }
 
   // mount endpoints
-  private mount(method: HTTPMethods | '*', path: string, handler?: RouteHandler, ...middleware: RouteMiddleware[]): void {
-    this._routes.push(new Route({ method, path, handler, middleware }))
+  private mount(method: HTTPMethods, path: string, handler: RouteHandler, ...middleware: MiddlewareHandler[]): void {
+    this._routes.push(new Route(method, path, handler, middleware))
   }
 
-  private _use(path: string, ...middleware: RouteMiddleware[]): void {
-    this.mount('*', path, undefined, ...middleware)
+  private _use(path: string, ...middleware: MiddlewareHandler[]): void {
+    const middlewareObjs = middleware.map(handler => new Middleware('*', path, handler))
+    this._middleware.push(...middlewareObjs)
   }
 
   // public methods
@@ -98,27 +105,27 @@ export class QuickRest {
     return this
   }
 
-  public get(path: string, handler: RouteHandler, ...middleware: RouteMiddleware[]): void {
+  public get(path: string, handler: RouteHandler, ...middleware: MiddlewareHandler[]): void {
     this.mount(HTTPMethods.GET, path, handler, ...middleware)
   }
 
-  public put(path: string, handler: RouteHandler, ...middleware: RouteMiddleware[]): void {
+  public put(path: string, handler: RouteHandler, ...middleware: MiddlewareHandler[]): void {
     this.mount(HTTPMethods.PUT, path, handler, ...middleware)
   }
 
-  public post(path: string, handler: RouteHandler, ...middleware: RouteMiddleware[]): void {
+  public post(path: string, handler: RouteHandler, ...middleware: MiddlewareHandler[]): void {
     this.mount(HTTPMethods.POST, path, handler, ...middleware)
   }
 
-  public options(path: string, handler: RouteHandler, ...middleware: RouteMiddleware[]): void {
+  public options(path: string, handler: RouteHandler, ...middleware: MiddlewareHandler[]): void {
     this.mount(HTTPMethods.OPTIONS, path, handler, ...middleware)
   }
 
-  public delete(path: string, handler: RouteHandler, ...middleware: RouteMiddleware[]): void {
+  public delete(path: string, handler: RouteHandler, ...middleware: MiddlewareHandler[]): void {
     this.mount(HTTPMethods.DELETE, path, handler, ...middleware)
   }
 
-  public use(path: string = '*', ...middleware: RouteMiddleware[]): void {
+  public use(path: string = '*', ...middleware: MiddlewareHandler[]): void {
     this._use(path, ...middleware)
   }
 
