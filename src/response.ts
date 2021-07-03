@@ -64,6 +64,26 @@ export class Response {
   }
 
   public unauthorized = (message: ResponseBody = 'Unauthorized'): void => {
+    this.status(401).send(message)
+  }
+
+  public forbidden = (message: ResponseBody = 'Forbidden'): void => {
     this.status(403).send(message)
+  }
+
+  public badRequest = (message: ResponseBody = 'Bad Request'): void => {
+    this.status(400).send(message)
+  }
+
+  public conflict = (message: ResponseBody = 'Conflict'): void => {
+    this.status(409).send(message)
+  }
+
+  public unprocessableEntity = (message: ResponseBody = 'Unprocessable entity'): void => {
+    this.status(422).send(message)
+  }
+
+  public tooManyRequests = (message: ResponseBody = 'Too many requests'): void => {
+    this.status(429).send(message)
   }
 }
