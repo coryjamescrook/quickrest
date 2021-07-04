@@ -18,23 +18,35 @@ export class Response {
     this.statusCode = 200
   }
 
+  private get isEnded(): boolean {
+    return this.serverResponse.writableFinished
+  }
+
   private get statusCode() {
     return this.serverResponse.statusCode
   }
 
   private set statusCode(code: number) {
+    if (this.isEnded) { return }
+
     this.serverResponse.statusCode = code
   }
 
   private write(body: StringResponseBody) {
+    if (this.isEnded) { return }
+    
     this.serverResponse.write(body)
   }
 
   private end(body?: ResponseBody) {
+    if (this.isEnded) { return }
+
     this.serverResponse.end(body)
   }
 
   public setHeader(name: string, value: string | number | string[]) {
+    if (this.isEnded) { return }
+    
     this.serverResponse.setHeader(name, value)
   }
 
@@ -49,6 +61,8 @@ export class Response {
   }
 
   public send = (body?: ResponseBody): void => {
+    if (this.isEnded) { return }
+    
     if (body === undefined) {
       this.end()
     } else if (typeof body === 'string') {

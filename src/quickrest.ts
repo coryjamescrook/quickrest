@@ -74,7 +74,7 @@ export class QuickRest {
       if (routes.length) {
         routes.forEach(route => route.handler(req, res))
       } else {
-        res.notFound()
+        res.notFound(`No route defined for ${req.method} ${req.url}`)
       }
     })
   }
