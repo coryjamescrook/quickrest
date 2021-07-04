@@ -1,4 +1,5 @@
 import http, { IncomingMessage, ServerResponse, Server } from 'http'
+import { mapSeries } from 'bluebird'
 
 import { Request } from './request'
 import { Response, ResponseHeader } from './response'
@@ -60,22 +61,23 @@ export class QuickRest {
   }
 
   private initServerListeners(): void {
-    this._server.on('request', (incoming: IncomingMessage, outgoing: ServerResponse) => {
+    this._server.on('request', async (incoming: IncomingMessage, outgoing: ServerResponse) => {
       const [req, res] = this.genReqAndRes(incoming, outgoing)
       const routes = this.findRoutesForRequest(req)
       const middlewares = this.findMiddlewareForRequest(req)
 
-      if (middlewares.length) {
-        middlewares.forEach(middleware => {
-          middleware.handler(req, res)
-        })
+      await mapSeries(middlewares, async (middleware: Middleware) => {
+        await middleware.handler(req, res)
+      })
+
+      if (!routes.length) {
+        res.notFound(`No route defined for ${req.method} ${req.url}`)
+        return
       }
 
-      if (routes.length) {
-        routes.forEach(route => route.handler(req, res))
-      } else {
-        res.notFound(`No route defined for ${req.method} ${req.url}`)
-      }
+      await mapSeries(routes, async (route: Route) => {
+        await route.handler(req, res)
+      })
     })
   }
 

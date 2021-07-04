@@ -21,8 +21,8 @@ server.use('*', (req) => {
   console.log(`Incoming request: ${req.method} ${req.url} at ${new Date().toISOString()}`)
 })
 
-server.use('/fail', (req, res) => {
-  res.badRequest()
+server.use('/fail', async (_req, res) => {
+  await res.badRequest()
 })
 
 server.serve(() => {
