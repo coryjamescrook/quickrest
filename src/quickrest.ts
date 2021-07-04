@@ -2,11 +2,20 @@ import http, { IncomingMessage, ServerResponse, Server } from 'http'
 import { mapSeries } from 'bluebird'
 
 import { Request } from './request'
-import { Response, ResponseHeader } from './response'
+import { Response, ResponseHeader, ResponseMessage, ResponseMessageMap } from './response'
 import { Route, RouteHandler } from './route'
 import { Middleware, MiddlewareHandler } from './middleware'
 
 import { HTTPMethods } from './common'
+
+const DEFAULT_NOT_FOUND_MESSAGE = 'Not found'
+const DEFAULT_UNAUTHORIZED_MESSAGE = 'Unauthorized'
+const DEFAULT_FORBIDDEN_MESSAGE = 'Forbidden'
+const DEFAULT_BAD_REQUEST_MESSAGE = 'Bad request'
+const DEFAULT_CONFLICT_MESSAGE = 'Conflict'
+const DEFAULT_UNPROCESSABLE_ENTITY_MESSAGE = 'Unprocessable entity'
+const DEFAULT_TOO_MANY_REQUESTS_MESSAGE = 'Too many requests'
+const DEFAULT_FALLBACK_MESSAGE = 'Unknown error'
 
 export interface QuickRestConfigOpts {
   port?: number
@@ -21,6 +30,15 @@ export class QuickRest {
   private _defaultHeaders: ResponseHeader[]
   public readonly loggingEnabled: boolean
 
+  public notFoundMessage: ResponseMessage = DEFAULT_NOT_FOUND_MESSAGE
+  public unauthorizedMessage: ResponseMessage = DEFAULT_NOT_FOUND_MESSAGE
+  public forbiddenMessage: ResponseMessage = DEFAULT_NOT_FOUND_MESSAGE
+  public badRequestMessage: ResponseMessage = DEFAULT_NOT_FOUND_MESSAGE
+  public conflictMessage: ResponseMessage = DEFAULT_NOT_FOUND_MESSAGE
+  public unprocessableEntityMessage: ResponseMessage = DEFAULT_NOT_FOUND_MESSAGE
+  public tooManyRequestsMessage: ResponseMessage = DEFAULT_NOT_FOUND_MESSAGE
+  public defaultMessage: ResponseMessage = DEFAULT_FALLBACK_MESSAGE
+
   constructor(configOpts?: QuickRestConfigOpts) {
     this.loggingEnabled = configOpts?.enableLogging || false
     this._port = Number(configOpts?.port) || 3000
@@ -32,10 +50,17 @@ export class QuickRest {
     this.initServerListeners()
   }
 
+  private messageMap = (req: IncomingMessage): ResponseMessageMap => {
+    return {
+      notFound: typeof this.notFoundMessage === 'string' ? this.notFoundMessage : this.notFoundMessage(req),
+      default: typeof this.defaultMessage === 'string' ? this.defaultMessage : this.defaultMessage(req),
+    }
+  }
+
   private genReqAndRes(req: IncomingMessage, res: ServerResponse): [Request, Response] {
     return [
       new Request(req),
-      this.setHeadersForRes(new Response(res))
+      this.setHeadersForRes(new Response(res, this.messageMap(req)))
     ]
   }
 

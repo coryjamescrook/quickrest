@@ -1,4 +1,6 @@
-import { ServerResponse } from 'http'
+import { IncomingMessage, ServerResponse } from 'http'
+
+import { Request } from './request'
 
 export interface ResponseHeader {
   name: string
@@ -10,11 +12,20 @@ export type JSONResponseBody = Record<string, unknown>
 export type StringResponseBody = string
 export type ResponseBody = JSONResponseBody | StringResponseBody
 
+export type ResponseMessage = string | ((req: IncomingMessage) => string)
+
+export interface ResponseMessageMap {
+  [key: string]: ResponseMessage
+  default: ResponseMessage
+}
+
 export class Response {
   private serverResponse: ServerResponse
+  private responseMessageMap: ResponseMessageMap
 
-  constructor(res: ServerResponse) {
+  constructor(res: ServerResponse, responseMessageMap: ResponseMessageMap) {
     this.serverResponse = res
+    this.responseMessageMap = responseMessageMap
     this.statusCode = 200
   }
 
