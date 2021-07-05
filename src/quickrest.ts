@@ -164,10 +164,6 @@ export class QuickRest {
 
   // used to start the server
   public serve(callbackFn?: (server: Server) => any): void {
-    if (callbackFn) {
-      this._server.listen(this._port, callbackFn(this._server))
-    } else {
-      this._server.listen(this._port)
-    }
+    this._server.listen(this._port, callbackFn?.(this._server))
   }
 }
