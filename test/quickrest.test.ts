@@ -1,6 +1,8 @@
 import { Server } from 'http'
 
-import { Request, Response, QuickRest, QuickRestConfigOpts } from '../src/quickrest'
+import QuickRest, { QuickRestConfigOpts } from '../src/quickrest'
+import Request from '../src/request'
+import Response from '../src/response'
 import { HTTPMethods } from '../src/common'
 import { getPrivate } from './helpers'
 
@@ -31,17 +33,6 @@ describe('quickrest', () => {
 
     expect(getPrivate(server, '_port')).toEqual(port)
     expect(server.loggingEnabled).toEqual(enableLogging)
-  })
-
-  describe('.instance', () => {
-    it('returns a single instance of a QuickRest class', () => {
-      const server = QuickRest.instance()
-      const serverTwo = QuickRest.instance()
-
-      expect(server).toBeInstanceOf(QuickRest)
-      expect(serverTwo).toBeInstanceOf(QuickRest)
-      expect(serverTwo).toStrictEqual(server)
-    })
   })
 
   describe('#port', () => {
