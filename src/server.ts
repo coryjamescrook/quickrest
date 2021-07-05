@@ -18,7 +18,13 @@ server.get('/fail', (_req, res) => {
 })
 
 server.use('*', (req) => {
-  console.log(`Incoming request: ${req.method} ${req.url} at ${new Date().toISOString()}`)
+  console.log(
+    `Incoming request:
+    ${req.method} ${req.url}
+    at: ${new Date().toISOString()}
+    by ip: ${req.socket.remoteAddress}
+    `
+  )
 })
 
 server.use('/fail', async (_req, res) => {

@@ -1,7 +1,5 @@
 import { IncomingMessage, ServerResponse } from 'http'
 
-import { Request } from './request'
-
 export interface ResponseHeader {
   name: string
   value: string | number | string[]
@@ -12,11 +10,15 @@ export type JSONResponseBody = Record<string, unknown>
 export type StringResponseBody = string
 export type ResponseBody = JSONResponseBody | StringResponseBody
 
-export type ResponseMessage = string | ((req: IncomingMessage) => string)
-
 export interface ResponseMessageMap {
-  [key: string]: ResponseMessage
-  default: ResponseMessage
+  notFound: string
+  unauthorized: string
+  forbidden: string
+  badRequest: string
+  conflict: string
+  unprocessableEntity: string
+  tooManyRequests: string
+  default: string
 }
 
 export class Response {
@@ -84,31 +86,31 @@ export class Response {
   }
 
   // helpers
-  public notFound = (message: ResponseBody = 'Not found'): void => {
+  public notFound = (message: ResponseBody = this.responseMessageMap.notFound): void => {
     this.status(404).send(message)
   }
 
-  public unauthorized = (message: ResponseBody = 'Unauthorized'): void => {
+  public unauthorized = (message: ResponseBody = this.responseMessageMap.unauthorized): void => {
     this.status(401).send(message)
   }
 
-  public forbidden = (message: ResponseBody = 'Forbidden'): void => {
+  public forbidden = (message: ResponseBody = this.responseMessageMap.forbidden): void => {
     this.status(403).send(message)
   }
 
-  public badRequest = (message: ResponseBody = 'Bad Request'): void => {
+  public badRequest = (message: ResponseBody = this.responseMessageMap.badRequest): void => {
     this.status(400).send(message)
   }
 
-  public conflict = (message: ResponseBody = 'Conflict'): void => {
+  public conflict = (message: ResponseBody = this.responseMessageMap.conflict): void => {
     this.status(409).send(message)
   }
 
-  public unprocessableEntity = (message: ResponseBody = 'Unprocessable entity'): void => {
+  public unprocessableEntity = (message: ResponseBody = this.responseMessageMap.unprocessableEntity): void => {
     this.status(422).send(message)
   }
 
-  public tooManyRequests = (message: ResponseBody = 'Too many requests'): void => {
+  public tooManyRequests = (message: ResponseBody = this.responseMessageMap.tooManyRequests): void => {
     this.status(429).send(message)
   }
 }
