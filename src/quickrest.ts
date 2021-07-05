@@ -17,18 +17,36 @@ const DEFAULT_UNPROCESSABLE_ENTITY_MESSAGE = 'Unprocessable entity'
 const DEFAULT_TOO_MANY_REQUESTS_MESSAGE = 'Too many requests'
 const DEFAULT_FALLBACK_MESSAGE = 'Unknown error'
 
-export interface QuickRestConfigOpts {
+type ConstructorType<T> = (...args: unknown[]) => T
+
+export interface QuickRestConfigOpts<T, U, V, W> {
   port?: number
   enableLogging?: boolean
+  requestConstructor?: ConstructorType<T>
+  responseConstructor?: ConstructorType<U>
+  routeConstructor?: ConstructorType<V>
+  middlewareConstructor?: ConstructorType<W>
 }
 
-export class QuickRest {
+export class QuickRest<
+      RequestType extends Request = Request,
+      ResponseType extends Response = Response,
+      RouteType extends Route = Route,
+      MiddlewareType extends Middleware = Middleware,
+      ConfigType = QuickRestConfigOpts<RequestType, ResponseType, RouteType, MiddlewareType>
+    > {
+
   private readonly _server: Server
   private _port: number
   private _routes: Route[]
   private _middleware: Middleware[]
   private _defaultHeaders: ResponseHeader[]
   public readonly loggingEnabled: boolean
+
+  private _Request: RequestType
+  private _Response: ResponseType
+  private _Route: RouteType
+  private _Middleware: MiddlewareType
 
   public notFoundMessage: string = DEFAULT_NOT_FOUND_MESSAGE
   public unauthorizedMessage: string = DEFAULT_UNAUTHORIZED_MESSAGE
@@ -39,7 +57,7 @@ export class QuickRest {
   public tooManyRequestsMessage: string = DEFAULT_TOO_MANY_REQUESTS_MESSAGE
   public defaultMessage: string = DEFAULT_FALLBACK_MESSAGE
 
-  constructor(configOpts?: QuickRestConfigOpts) {
+  constructor(configOpts?: ConfigType) {
     this.loggingEnabled = configOpts?.enableLogging || false
     this._port = Number(configOpts?.port) || 3000
     this._server = http.createServer()
@@ -47,7 +65,16 @@ export class QuickRest {
     this._middleware = []
     this._defaultHeaders = []
 
+    this._Request = configOpts?.requestConstructor || Request
+    this._Response = configOpts?.responseConstructor || Response
+    this._Route = configOpts?.routeConstructor || Route
+    this._Middleware = configOpts?.middlewareConstructor || Middleware
+
     this.initServerListeners()
+  }
+
+  private newRequest = () => {
+    return new this._Request()
   }
 
   private get messageMap(): ResponseMessageMap {
@@ -63,7 +90,9 @@ export class QuickRest {
     }
   }
 
-  private genReqAndRes(req: IncomingMessage, res: ServerResponse): [Request, Response] {
+  private get 
+
+  private genReqAndRes(req: IncomingMessage, res: ServerResponse): [RequestType, ResponseType] {
     return [
       new Request(req),
       this.setHeadersForRes(new Response(res, this.messageMap))
