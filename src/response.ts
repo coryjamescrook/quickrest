@@ -1,4 +1,4 @@
-import { IncomingMessage, ServerResponse } from 'http'
+import { ServerResponse } from 'http'
 
 export interface ResponseHeader {
   name: string
